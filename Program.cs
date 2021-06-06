@@ -1,8 +1,6 @@
 ﻿using Graphic.Core;
 using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
-using OpenTK.Windowing.GraphicsLibraryFramework;
 using System;
 
 const int Width = 800, Height = 600;

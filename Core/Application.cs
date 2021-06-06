@@ -6,20 +6,29 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using OpenTK.Graphics.OpenGL4;
 using Graphic.Shaders;
+using System;
 
 namespace Graphic.Core
 {
 	public class Application : GameWindow
 	{
-		private readonly float[] _vertices =
+		private readonly Vector3[] _vertices =
 		{
-			-0.5f, -0.5f, 0.0f, //Bottom-left vertex
-			 0.5f, -0.5f, 0.0f, //Bottom-right vertex
-			 0.0f,  0.5f, 0.0f  //Top vertex
+			new Vector3(0.5f,  0.5f, 0.0f),
+			new Vector3(0.5f, -0.5f, 0.0f),
+			new Vector3(-0.5f, -0.5f, 0.0f),
+			new Vector3(-0.5f,  0.5f, 0.0f)
+		};
+
+		private readonly uint[] _indices =
+		{
+			0, 1, 3,
+			1, 2, 3
 		};
 
 		private int _vertexBufferObject;
 		private int _vertexArrayObject;
+		private int _elementBufferObject;
 
 		private Shader _shader;
 
@@ -35,18 +44,24 @@ namespace Graphic.Core
 
 			_vertexBufferObject = GL.GenBuffer();
 			GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferObject);
+			unsafe
+			{
+				GL.BufferData(BufferTarget.ArrayBuffer, _vertices.Length * sizeof(Vector3), _vertices, BufferUsageHint.StaticDraw);
+			}
 
 			_vertexArrayObject = GL.GenVertexArray();
 			GL.BindVertexArray(_vertexArrayObject);
 
-			GL.BufferData(BufferTarget.ArrayBuffer, _vertices.Length * sizeof(float), _vertices, BufferUsageHint.StaticDraw);
-
-			GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
-			GL.EnableVertexAttribArray(0);
 
 			_shader = new Shader("Shaders/Shader.vert", "Shaders/Shader.frag");
-
 			_shader.Use();
+
+			GL.VertexAttribPointer(_shader.GetAttribLocation("aPosition"), 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), 0);
+			GL.EnableVertexAttribArray(0);
+
+			_elementBufferObject = GL.GenBuffer();
+			GL.BindBuffer(BufferTarget.ElementArrayBuffer, _elementBufferObject);
+			GL.BufferData(BufferTarget.ElementArrayBuffer, _indices.Length * sizeof(float), _indices, BufferUsageHint.StaticDraw);
 
 
 			base.OnLoad();
@@ -65,10 +80,11 @@ namespace Graphic.Core
 			GL.Clear(ClearBufferMask.ColorBufferBit);
 
 			_shader.Use();
-			
+
 			GL.BindVertexArray(_vertexArrayObject);
 
-			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+			//GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+			GL.DrawElements(PrimitiveType.TriangleStrip, _indices.Length, DrawElementsType.UnsignedInt, 0);
 
 			Context.SwapBuffers();
 			base.OnRenderFrame(args);
