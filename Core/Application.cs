@@ -15,9 +15,18 @@ namespace Graphic.Core
 	{
 		private readonly float[] _vertices =
 		{
-			0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,
-			-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,
-			0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f
+			//Position          Texture coordinates
+			0.5f,  0.5f, 0.0f, 1.0f, 1.0f, // top right
+			0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // bottom right
+			-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // bottom left
+			-0.5f,  0.5f, 0.0f, 0.0f, 1.0f  // top left
+		};
+
+		private readonly float[] _textureCordinates =
+		{
+			0.0f, 0.0f,
+			1.0f, 0.0f,
+			0.5f, 1.0f
 		};
 
 		private int _vertexBufferObject;
@@ -25,7 +34,7 @@ namespace Graphic.Core
 
 		private Stopwatch _timer;
 		private Shader _shader;
-
+		private Texture _texture;
 
 		public Application(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
 			: base(gameWindowSettings, nativeWindowSettings)
@@ -41,25 +50,36 @@ namespace Graphic.Core
 
 			_vertexBufferObject = GL.GenBuffer();
 			GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferObject);
-			unsafe
-			{
-				GL.BufferData(BufferTarget.ArrayBuffer, _vertices.Length * sizeof(float), _vertices, BufferUsageHint.StaticDraw);
-			}
+
+			GL.BufferData(BufferTarget.ArrayBuffer, _vertices.Length * sizeof(float), _vertices, BufferUsageHint.StaticDraw);
+
 
 			_vertexArrayObject = GL.GenVertexArray();
 			GL.BindVertexArray(_vertexArrayObject);
-
 
 			_shader = new Shader("Shaders/Shader.vert", "Shaders/Shader.frag");
 			_shader.Use();
 
 			var aPositionIndex = _shader.GetAttribLocation("aPosition");
-			GL.VertexAttribPointer(aPositionIndex, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 0);
+			GL.VertexAttribPointer(aPositionIndex, 3, VertexAttribPointerType.Float, false, 5 * sizeof(float), 0);
 			GL.EnableVertexAttribArray(aPositionIndex);
 
-			var aColorIndex = _shader.GetAttribLocation("aColor");
-			GL.VertexAttribPointer(aColorIndex, 3, VertexAttribPointerType.Float, false, 6 * sizeof(float), 3 * sizeof(float));
-			GL.EnableVertexAttribArray(aColorIndex);
+			int texCoordLocation = _shader.GetAttribLocation("aTexCoord");
+			GL.EnableVertexAttribArray(texCoordLocation);
+			GL.VertexAttribPointer(texCoordLocation, 2, VertexAttribPointerType.Float, false, 5 * sizeof(float), 3 * sizeof(float));
+
+			_texture = Texture.LoadFromFile("Resources/wall.jpg");
+			_texture.Use(TextureUnit.Texture0);
+
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
+
+			float[] borderColor = { 1.0f, 1.0f, 0.0f, 1.0f };
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureBorderColor, borderColor);
+
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+
+			GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
 
 			GL.GetInteger(GetPName.MaxVertexAttribs, out int maxAttributeCount);
 			Console.WriteLine($"Maximum number of vertex attributes supported: {maxAttributeCount}");
@@ -71,6 +91,7 @@ namespace Graphic.Core
 		{
 			GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 			GL.DeleteBuffer(_vertexBufferObject);
+			GL.DeleteTexture(_texture.Handle);
 			_shader?.Dispose();
 			base.OnUnload();
 		}

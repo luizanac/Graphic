@@ -7,33 +7,33 @@ namespace Graphic.Shaders
 {
 	public class Shader
 	{
-		public readonly int Program;
+		private readonly int _program;
 
 		public Shader(string vertexPath, string fragmentPath)
 		{
 			var vertexShader = CompileShader(vertexPath, ShaderType.VertexShader);
 			var fragmentShader = CompileShader(fragmentPath, ShaderType.FragmentShader);
 
-			Program = GL.CreateProgram();
-			GL.AttachShader(Program, vertexShader);
-			GL.AttachShader(Program, fragmentShader);
+			_program = GL.CreateProgram();
+			GL.AttachShader(_program, vertexShader);
+			GL.AttachShader(_program, fragmentShader);
 
-			GL.LinkProgram(Program);
+			GL.LinkProgram(_program);
 
-			GL.DetachShader(Program, vertexShader);
-			GL.DetachShader(Program, fragmentShader);
+			GL.DetachShader(_program, vertexShader);
+			GL.DetachShader(_program, fragmentShader);
 			GL.DeleteShader(vertexShader);
 			GL.DeleteShader(fragmentShader);
 		}
 
 		public void Use()
 		{
-			GL.UseProgram(Program);
+			GL.UseProgram(_program);
 		}
 
 		public int GetAttribLocation(string attribName)
 		{
-			return GL.GetAttribLocation(Program, attribName);
+			return GL.GetAttribLocation(_program, attribName);
 		}
 
 		private static int CompileShader(string path, ShaderType shaderType)
@@ -57,14 +57,14 @@ namespace Graphic.Shaders
 		{
 			if (!_disposed)
 			{
-				GL.DeleteProgram(Program);
+				GL.DeleteProgram(_program);
 				_disposed = true;
 			}
 		}
 
 		~Shader()
 		{
-			GL.DeleteProgram(Program);
+			GL.DeleteProgram(_program);
 		}
 
 		public void Dispose()
